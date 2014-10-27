@@ -1,0 +1,6 @@
+.cproject
+.project
+.settings/*
+Debug/*
+timer.h
+a.out
