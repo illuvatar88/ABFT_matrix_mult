@@ -14,16 +14,30 @@
 #include <sched.h>
 #include <cstring>
 #include "timer.cpp"
-
+#include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 100
-#define SIZE_C 100
+#define SIZE_R 3500
+#define SIZE_C 1000
 #define SIZE_VECTOR SIZE_C
 #define ITER 1
 #define THREAD_LIMIT 2
 
+#ifdef SIMPLIFI
+#include "SimPLiFI_sighandlers.h"
+//SimPLiFI identifiers
+void SimPLiFI_start();
+void SimPLiFI_end();
+#endif
+
+
+
+void matrix_vector_mult(int *A, int *B, int *C, int num_threads);
+
 int main (int argc, char *argv[]) {
+#ifdef SIMPLIFI
+    SimPLiFI_register_sighandlers();
+#endif
     int max_threads = omp_get_num_procs();
     cout<<"Maximum no. of threads: "<<max_threads<<endl;
     int num_threads = (max_threads < THREAD_LIMIT ? max_threads : THREAD_LIMIT);
@@ -32,9 +46,16 @@ int main (int argc, char *argv[]) {
     int *B = new int[SIZE_C * 2];
     int *C = new int[(SIZE_R + 1) * 2];
     int i, j, k;
-    char thread_string[20];
     unsigned int seed = 123456789;
     srand(seed);
+#if 1
+    #pragma omp parallel
+    {
+        char thread_string[20];
+        sprintf(thread_string, "Thread: %d proc: %d\n", omp_get_thread_num(), sched_getcpu());
+        cout<<thread_string;
+    }
+#endif
     #pragma omp parallel for shared(A) private(i, j) schedule(static)
     for (i = 0 ; i < SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
@@ -49,122 +70,78 @@ int main (int argc, char *argv[]) {
     }
     double init_time = timerval();
     int *sum_c;
+    int errors, corrupted;
     for (int iter = 1; iter <= ITER ; iter++) {
-        #pragma omp parallel shared(A) private(i, j, sum_c)
-        {
-            #pragma omp master
-            {
-                for (j = 0 ; j < SIZE_C ; j++) {
-                    A[SIZE_R * SIZE_C + j] = 0;
-                }
-            }
-            sum_c = new int[SIZE_C];
-            for (j = 0 ; j < SIZE_C ; j++) {
-                sum_c[j] = 0;
-            }
-            #pragma omp for schedule(static)
-            for (i = 0 ; i < SIZE_R ; i++) {
-                for (j = 0; j < SIZE_C ; j++) {
-                    sum_c[j] += A[i * SIZE_C + j];
-                }
-            }
-            #pragma omp critical
-            {
-                for (j = 0 ; j < SIZE_C ; j++) {
-                    A[SIZE_R * SIZE_C + j] += sum_c[j];
-                }
-            }
-            delete[] sum_c;
+        if (calc_column_checksum(A, SIZE_R, SIZE_C, num_threads) != 0) {
+            return 1;
         }
-        #pragma omp parallel for shared(B) private(i) schedule(static)
-        for (i = 0 ; i < SIZE_C ; i++) {
-            B[i * 2 + 1] = B[i * 2];
+        if (dup_column_vector(B, SIZE_C, num_threads) != 0) {
+            return 1;
         }
-        #pragma omp parallel shared(A, B, C, num_threads) private(i, j, k, thread_string)
-            {
-            #if 1
-                if (iter == 1) {
-                    sprintf(thread_string, "Thread: %d proc: %d\n", omp_get_thread_num(), sched_getcpu());
-                    cout<<thread_string;
-                }
-            #endif
-                #pragma omp for schedule(static, (SIZE_R + 1) / num_threads)
-                for (i = 0 ; i <= SIZE_R ; i++) {
-                    for (j = 0 ; j < 2 ; j++) {
-                        int sum = 0;
-                        for (k = 0 ; k < SIZE_C ; k++) {
-                            sum += A[i * SIZE_C + k] * B[k * 2 + j];
-                        }
-                        C[i * 2 + j] = sum;
-                    }
-                }
-            }
-        C[0]=1;
-        C[10]=2;
-        C[16]=3;
-        int *diff_vals_array = new int[SIZE_R];
-        int diff_vals_count = 0;
-        int sum_data = 0;
-        int sum_dup = 0;
-        #pragma omp parallel for shared(C, num_threads, diff_vals_array) private(i) reduction(+ : sum_data, sum_dup, diff_vals_count) schedule(static, (SIZE_R + 1) / num_threads)
-        for (i = 0 ; i < SIZE_R ; i++) {
-            int data = C[i * 2];
-            int dup = C[i * 2 + 1];
-            sum_data += data;
-            sum_dup += dup;
-            if (data != dup) {
-                ++diff_vals_count;
-                diff_vals_array[i] = 1;
-            } else {
-                diff_vals_array[i] = 0;
-            }
-        }
-        int corrupted = 0;
-        if (C[SIZE_R * 2] != sum_data) {
-            corrupted = 1;
-            if (C[SIZE_R * 2 + 1] == sum_dup) {
-                #pragma omp parallel for shared(C, diff_vals_array) private(i) reduction(+ : sum_data, sum_dup, diff_vals_count) schedule(static, (SIZE_R + 1) / num_threads)
-                for (i = 0 ; i < SIZE_R ; i++) {
-                    if (diff_vals_array[i] == 1) {
-                        C[i * 2] = C[i * 2 + 1];
-                    }
-                }
-
-            } else {
-                corrupted = 2;
-            }
-        }
-        cout<<"Minimum Errors : "<<diff_vals_count<<endl;
-        if (corrupted == 2) {
-            cout<<"Data in C matrix irrecoverably corrupted\n";
-        } else if (corrupted == 1) {
-            cout <<"Data in C matrix recovered\n";
-        } else {
-            cout <<"C matrix intact\n";
+#ifdef SIMPLIFI
+    SimPLiFI_start();
+#endif
+        matrix_vector_mult(A, B, C, num_threads);
+        inject_random_error(C, SIZE_R + 1, 2);
+#ifdef SIMPLIFI
+    SimPLiFI_end();
+#endif
+        if (check_vector_checksum(C, SIZE_R, num_threads, errors, corrupted) != 0) {
+            return 1;
         }
     }
     double end_time = timerval();
-    #if 0
-        cout<<"Input matrix A :\n";
-        for (i = 0 ; i <= SIZE_R ; i++) {
-            for (j = 0 ; j < SIZE_C ; j++) {
-                cout<<A[i * SIZE_C + j]<<" ";
-            }
+    if (errors == 0) {
+        cout << "Vector Intact\n";
+    } else {
+        if (corrupted == 0) {
+            cout << "Vector recovered, corrected errors : "<<errors<<endl;
+        } else {
+            cout << "Vector Corrupted with minimum errors : "<<errors<<endl;
+        }
+    }
+#if 0
+    cout<<"Input matrix A :\n";
+    for (i = 0 ; i <= SIZE_R ; i++) {
+        for (j = 0 ; j < SIZE_C ; j++) {
+            cout<<A[i * SIZE_C + j]<<" ";
+        }
             cout<<endl;
-        }
-        cout<<"Input vector B :\n";
-        for (i = 0 ; i < SIZE_C ; i++) {
-            cout<<B[i * 2]<<" "<<B[i * 2 + 1]<<endl;
-        }
-        cout<<"Output vector C: \n";
-        for (i = 0 ; i <= SIZE_R ; i++) {
-            cout<<C[i * 2]<<" "<<C[i * 2 + 1]<<endl;
-        }
-    #endif
+    }
+    cout<<"Input vector B :\n";
+    for (i = 0 ; i < SIZE_C ; i++) {
+        cout<<B[i * 2]<<" "<<B[i * 2 + 1]<<endl;
+    }
+    cout<<"Output vector C: \n";
+    for (i = 0 ; i <= SIZE_R ; i++) {
+        cout<<C[i * 2]<<" "<<C[i * 2 + 1]<<endl;
+    }
+#endif
     //cout<<setprecision(numeric_limits<double>::digits10 + 1)<<end_time<<" "<<init_time<<endl;
     double avg_run_time_us = (end_time - init_time) * 1e06 / ITER;
     cout<<"Average Run time: "<<avg_run_time_us<<" us\n";
+    FILE *result=fopen("result.dat", "w");
+    //save result of ABFT check (used in validation program)
+    fprintf(result, "%d\n", errors);
+    //save C matrix
+    for(i = 0; i < SIZE_R; i++) {
+            fprintf(result, "%011d,    ", C[i * 2]);
+            fprintf(result, ";\n");
+    }
     delete[] A, B, C;
     return 0;
 }
 
+void matrix_vector_mult(int *A, int *B, int *C, int num_threads) {
+    int i, j, k;
+    #pragma omp parallel for shared(A, B, C, num_threads) private(i, j, k) schedule(static, (SIZE_R + 1) / num_threads)
+    for (i = 0 ; i <= SIZE_R ; i++) {
+        for (j = 0 ; j < 2 ; j++) {
+            int sum = 0;
+            for (k = 0 ; k < SIZE_C ; k++) {
+                sum += A[i * SIZE_C + k] * B[k * 2 + j];
+            }
+            C[i * 2 + j] = sum;
+        }
+    }
+}
