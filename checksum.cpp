@@ -12,8 +12,8 @@ using namespace std;
 
 #define ERROR_RATIO 0.0005
 
-int calc_column_checksum (int A[], int size_r, int size_c);
-int dup_column_vector ( int B[], int size);
+int calc_column_checksum (int A[], int size_r, int size_c, int num_threads);
+int dup_column_vector (int B[], int size, int num_threads);
 void inject_random_error (int C[], int size_r, int size_c);
 int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, int &corrupted);
 
@@ -95,8 +95,6 @@ int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, 
     num_errors = errors;
     return 0;
 }
-
-
 
 void inject_random_error (int C[], int size_r, int size_c) {
     int num_errors = float(size_r * size_c) * float(ERROR_RATIO);

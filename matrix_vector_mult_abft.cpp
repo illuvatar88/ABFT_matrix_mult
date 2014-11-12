@@ -17,11 +17,11 @@
 #include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 3500
-#define SIZE_C 1000
-#define SIZE_VECTOR SIZE_C
-#define ITER 1
-#define THREAD_LIMIT 2
+#define SIZE_R 35     //row size
+#define SIZE_C 10     //column size
+#define SIZE_VECTOR SIZE_C      //vector length
+#define ITER 1      //number of iterations
+#define THREAD_LIMIT 2      //max number of threads to use
 
 #ifdef SIMPLIFI
 #include "SimPLiFI_sighandlers.h"
@@ -39,16 +39,16 @@ int main (int argc, char *argv[]) {
     SimPLiFI_register_sighandlers();
 #endif
     int max_threads = omp_get_num_procs();
-    cout<<"Maximum no. of threads: "<<max_threads<<endl;
     int num_threads = (max_threads < THREAD_LIMIT ? max_threads : THREAD_LIMIT);
     omp_set_num_threads(num_threads);
-    int *A = new int[(SIZE_R + 1) * SIZE_C];
-    int *B = new int[SIZE_C * 2];
-    int *C = new int[(SIZE_R + 1) * 2];
+    int *A = new int[(SIZE_R + 1) * SIZE_C];    //input matrix
+    int *B = new int[SIZE_C * 2];    //input vector
+    int *C = new int[(SIZE_R + 1) * 2];    //output matrix
     int i, j, k;
     unsigned int seed = 123456789;
     srand(seed);
-#if 1
+    //Block to check affinity
+#if 0
     #pragma omp parallel
     {
         char thread_string[20];
@@ -56,41 +56,44 @@ int main (int argc, char *argv[]) {
         cout<<thread_string;
     }
 #endif
+    //Assign input matrix
     #pragma omp parallel for shared(A) private(i, j) schedule(static)
     for (i = 0 ; i < SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
-            A[i * SIZE_C + j] = int(rand()) % 100;
-            //A[i * SIZE_C + j] = 1;
+            A[i * SIZE_C + j] = int(rand()) % 10;
         }
     }
+    //Assign input vector
     #pragma omp parallel for shared(B) private(i) schedule(static)
     for (i = 0 ; i < SIZE_C ; i++) {
-        B[i * 2] = int(rand()) % 100;
-        //B[i * 2] = 1;
+        B[i * 2] = int(rand()) % 10;
     }
-    double init_time = timerval();
-    int *sum_c;
+    double init_time = timerval();    //start timing
     int errors, corrupted;
     for (int iter = 1; iter <= ITER ; iter++) {
+        //checksum for matrix A
         if (calc_column_checksum(A, SIZE_R, SIZE_C, num_threads) != 0) {
             return 1;
         }
+        //vector B duplicated
         if (dup_column_vector(B, SIZE_C, num_threads) != 0) {
             return 1;
         }
 #ifdef SIMPLIFI
     SimPLiFI_start();
 #endif
+        //run multiplication
         matrix_vector_mult(A, B, C, num_threads);
-        inject_random_error(C, SIZE_R + 1, 2);
+        //inject_random_error(C, SIZE_R + 1, 2);
 #ifdef SIMPLIFI
     SimPLiFI_end();
 #endif
+        //check and try to recover otherwise set corrupted as 1
         if (check_vector_checksum(C, SIZE_R, num_threads, errors, corrupted) != 0) {
             return 1;
         }
     }
-    double end_time = timerval();
+    double end_time = timerval();    //end timing
     if (errors == 0) {
         cout << "Vector Intact\n";
     } else {
@@ -100,6 +103,7 @@ int main (int argc, char *argv[]) {
             cout << "Vector Corrupted with minimum errors : "<<errors<<endl;
         }
     }
+    //Block to print input and output
 #if 0
     cout<<"Input matrix A :\n";
     for (i = 0 ; i <= SIZE_R ; i++) {
