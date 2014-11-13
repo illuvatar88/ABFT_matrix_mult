@@ -84,10 +84,15 @@ int main (int argc, char *argv[]) {
 #endif
         //run multiplication
         matrix_vector_mult(A, B, C, num_threads);
-        //inject_random_error(C, SIZE_R + 1, 2);
+
+#if 0   //set to 1 to use random error injection function in checksum.cpp
+        inject_random_error(C, SIZE_R + 1, 2);
+#endif
+
 #ifdef SIMPLIFI
     SimPLiFI_end();
 #endif
+
         //check and try to recover otherwise set corrupted as 1
         if (check_vector_checksum(C, SIZE_R, num_threads, errors, corrupted) != 0) {
             return 1;
