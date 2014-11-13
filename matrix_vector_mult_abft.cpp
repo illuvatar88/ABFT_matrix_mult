@@ -20,7 +20,6 @@ using namespace std;
 #define SIZE_R 35     //row size
 #define SIZE_C 10     //column size
 #define SIZE_VECTOR SIZE_C      //vector length
-#define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
 
 #ifdef SIMPLIFI
@@ -70,28 +69,26 @@ int main (int argc, char *argv[]) {
     }
     double init_time = timerval();    //start timing
     int errors, corrupted;
-    for (int iter = 1; iter <= ITER ; iter++) {
-        //checksum for matrix A
-        if (calc_column_checksum(A, SIZE_R, SIZE_C, num_threads) != 0) {
-            return 1;
-        }
-        //vector B duplicated
-        if (dup_column_vector(B, SIZE_C, num_threads) != 0) {
-            return 1;
-        }
+    //checksum for matrix A
+    if (calc_column_checksum(A, SIZE_R, SIZE_C, num_threads) != 0) {
+        return 1;
+    }
+    //vector B duplicated
+    if (dup_column_vector(B, SIZE_C, num_threads) != 0) {
+        return 1;
+    }
 #ifdef SIMPLIFI
     SimPLiFI_start();
 #endif
-        //run multiplication
-        matrix_vector_mult(A, B, C, num_threads);
-        //inject_random_error(C, SIZE_R + 1, 2);
+    //run multiplication
+    matrix_vector_mult(A, B, C, num_threads);
+    //inject_random_error(C, SIZE_R + 1, 2);
 #ifdef SIMPLIFI
     SimPLiFI_end();
 #endif
-        //check and try to recover otherwise set corrupted as 1
-        if (check_vector_checksum(C, SIZE_R, num_threads, errors, corrupted) != 0) {
-            return 1;
-        }
+    //check and try to recover otherwise set corrupted as 1
+    if (check_vector_checksum(C, SIZE_R, num_threads, errors, corrupted) != 0) {
+        return 1;
     }
     double end_time = timerval();    //end timing
     if (errors == 0) {

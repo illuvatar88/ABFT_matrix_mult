@@ -17,6 +17,7 @@ int dup_column_vector (int B[], int size, int num_threads);
 void inject_random_error (int C[], int size_r, int size_c);
 int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, int &corrupted);
 
+//calculate column checksum
 int calc_column_checksum (int A[], int size_r, int size_c, int num_threads) {
     int i, j;
     int *sum_c;
@@ -49,6 +50,7 @@ int calc_column_checksum (int A[], int size_r, int size_c, int num_threads) {
     return 0;
 }
 
+//duplicate column for vector
 int dup_column_vector (int B[], int size, int num_threads) {
     int i;
     #pragma omp parallel for shared(B) private(i) schedule(static, (size + 1) / num_threads)
@@ -58,6 +60,7 @@ int dup_column_vector (int B[], int size, int num_threads) {
     return 0;
 }
 
+//check checksum and correct if possible
 int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, int &corrupted) {
     int *diff_vals_array = new int[size];
     int errors = 0;
