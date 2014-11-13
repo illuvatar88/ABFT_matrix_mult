@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#define ERROR_RATIO 0.0005
+#define ERROR_RATIO 0.0005 //used by inject_random_error for fraction of cells to corrupt
 
 int calc_column_checksum (int A[], int size_r, int size_c, int num_threads);
 int dup_column_vector (int B[], int size, int num_threads);
