@@ -5,6 +5,13 @@
  *      Author: sony
  */
 
+//Begin SimPLiFI Header
+//errorDetection=error_count.dat
+//start=matrix_vector_mult
+//end=matrix_vector_mult
+//output=result.dat
+//End SimPLiFI Header
+
 #include <omp.h>
 #include <iostream>
 #include <cstdio>
@@ -17,8 +24,8 @@
 #include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 35     //row size
-#define SIZE_C 10     //column size
+#define SIZE_R 3500     //row size
+#define SIZE_C 1000     //column size
 #define SIZE_VECTOR SIZE_C      //vector length
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
@@ -129,9 +136,10 @@ int main (int argc, char *argv[]) {
     //cout<<setprecision(numeric_limits<double>::digits10 + 1)<<end_time<<" "<<init_time<<endl;
     double avg_run_time_us = (end_time - init_time) * 1e06 / ITER;
     cout<<"Average Run time: "<<avg_run_time_us<<" us\n";
+    FILE *err_cnt=fopen("error_count.dat", "w");
     FILE *result=fopen("result.dat", "w");
     //save result of ABFT check (used in validation program)
-    fprintf(result, "%d\n", errors);
+    fprintf(err_cnt, "%d\n", errors);
     //save C matrix
     for(i = 0; i < SIZE_R; i++) {
             fprintf(result, "%011d,    ", C[i * 2]);

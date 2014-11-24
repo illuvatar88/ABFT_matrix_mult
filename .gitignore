@@ -5,3 +5,6 @@ Debug/*
 timer.h
 a.out
 launch.out
+result.dat
+error_count.dat
+
