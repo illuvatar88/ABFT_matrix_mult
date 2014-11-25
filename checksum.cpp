@@ -82,6 +82,7 @@ int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, 
     }
     corrupted = 0;
     if (C[size * 2] != sum_data) {
+        ++errors;
         if (C[size * 2 + 1] == sum_dup) {
             #pragma omp parallel for shared(C, diff_vals_array) private(i) schedule(static, (size + 1) / num_threads)
             for (i = 0 ; i < size ; i++) {

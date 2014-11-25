@@ -32,12 +32,7 @@ using namespace std;
 
 #ifdef SIMPLIFI
 #include "SimPLiFI_sighandlers.h"
-//SimPLiFI identifiers
-void SimPLiFI_start();
-void SimPLiFI_end();
 #endif
-
-
 
 void matrix_vector_mult(int *A, int *B, int *C, int num_threads);
 
@@ -86,20 +81,12 @@ int main (int argc, char *argv[]) {
         if (dup_column_vector(B, SIZE_C, num_threads) != 0) {
             return 1;
         }
-#ifdef SIMPLIFI
-    SimPLiFI_start();
-#endif
         //run multiplication
         matrix_vector_mult(A, B, C, num_threads);
 
 #if 0   //set to 1 to use random error injection function in checksum.cpp
         inject_random_error(C, SIZE_R + 1, 2);
 #endif
-
-#ifdef SIMPLIFI
-    SimPLiFI_end();
-#endif
-
         //check and try to recover otherwise set corrupted as 1
         if (check_vector_checksum(C, SIZE_R, num_threads, errors, corrupted) != 0) {
             return 1;
