@@ -80,6 +80,8 @@ int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, 
             diff_vals_array[i] = 0;
         }
     }
+    cout << "Column sum : " << sum_data << endl;
+    cout << "Column checksum : " << C[size * 2] << endl;
     corrupted = 0;
     if (C[size * 2] != sum_data) {
         ++errors;
