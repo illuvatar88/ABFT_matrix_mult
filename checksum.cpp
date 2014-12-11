@@ -102,6 +102,46 @@ int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, 
     return 0;
 }
 
+//calculate column checksum
+int calc_matrix_checksum (int A[], int size_r, int size_c, int num_threads) {
+    int i, j;
+    int *sum_c;
+    #pragma omp parallel shared(A) private(i, j, sum_c)
+    {
+        #pragma omp master
+        {
+            for (j = 0 ; j < size_c + 1 ; j++) {
+                A[size_r * (size_c + 1) + j] = 0;
+            }
+        }
+        #pragma omp for schedule(static, (size_r + 1) / num_threads)
+        for (i = 0 ; i < size_r ; i++) {
+                A[size_c + (size_c + 1) * i] = 0;
+        }
+        sum_c = new int[size_c + 1];
+        for (j = 0 ; j < size_c + 1 ; j++) {
+            sum_c[j] = 0;
+        }
+        #pragma omp for schedule(static, (size_r + 1) / num_threads)
+        for (i = 0 ; i < size_r ; i++) {
+            for (j = 0; j < size_c ; j++) {
+                A[size_c + (size_c + 1) * i] += A[i * (size_c + 1) + j];
+                sum_c[j] += A[i * (size_c + 1) + j];
+            }
+            sum_c[size_c] += A[size_c + (size_c + 1) * i];
+        }
+        #pragma omp critical
+        {
+            for (j = 0 ; j < size_c + 1 ; j++) {
+                A[size_r * (size_c + 1) + j] += sum_c[j];
+            }
+        }
+        delete[] sum_c;
+    }
+    return 0;
+}
+
+
 void inject_random_error (int C[], int size_r, int size_c) {
     int num_errors = float(size_r * size_c) * float(ERROR_RATIO);
     num_errors = (num_errors > 0 ? num_errors : 1);
