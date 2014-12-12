@@ -59,38 +59,37 @@ int main (int argc, char *argv[]) {
     }
 #endif
     //Assign input matrix
-    #pragma omp parallel for shared(A) private(i, j) schedule(static)
+    //#pragma omp parallel for shared(A) private(i, j) schedule(static)
     for (i = 0 ; i < SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
             A[i * SIZE_C + j] = int(rand()) % 10;
         }
     }
     //Assign input vector
-    #pragma omp parallel for shared(B) private(i) schedule(static)
+    //#pragma omp parallel for shared(B) private(i) schedule(static)
     for (i = 0 ; i < SIZE_C ; i++) {
         B[i * 2] = int(rand()) % 10;
     }
     double init_time = timerval();    //start timing
     int errors, corrupted;
-    for (int iter = 1; iter <= ITER ; iter++) {
-        //checksum for matrix A
-        if (calc_column_checksum(A, SIZE_R, SIZE_C, num_threads) != 0) {
-            return 1;
-        }
-        //vector B duplicated
-        if (dup_column_vector(B, SIZE_C, num_threads) != 0) {
-            return 1;
-        }
-        //run multiplication
-        matrix_vector_mult(A, B, C, num_threads);
-
+    //checksum for matrix A
+    if (calc_column_checksum(A, SIZE_R, SIZE_C, num_threads) != 0) {
+        return 1;
+    }
+    //vector B duplicated
+    if (dup_column_vector(B, SIZE_C, num_threads) != 0) {
+        return 1;
+    }
+    double init_time_op = timerval();
+    //run multiplication
+    matrix_vector_mult(A, B, C, num_threads);
+    double end_time_op = timerval();
 #if 0   //set to 1 to use random error injection function in checksum.cpp
         inject_random_error(C, SIZE_R + 1, 2);
 #endif
-        //check and try to recover otherwise set corrupted as 1
-        if (check_vector_checksum(C, SIZE_R, num_threads, errors, corrupted) != 0) {
-            return 1;
-        }
+    //check and try to recover otherwise set corrupted as 1
+    if (check_vector_checksum(C, SIZE_R, num_threads, errors, corrupted) != 0) {
+        return 1;
     }
     double end_time = timerval();    //end timing
     if (errors == 0) {
@@ -121,8 +120,10 @@ int main (int argc, char *argv[]) {
     }
 #endif
     //cout<<setprecision(numeric_limits<double>::digits10 + 1)<<end_time<<" "<<init_time<<endl;
+    double avg_run_time_op_us = (end_time_op - init_time_op) * 1e06 / ITER;
     double avg_run_time_us = (end_time - init_time) * 1e06 / ITER;
-    cout<<"Average Run time: "<<avg_run_time_us<<" us\n";
+    double overhead = (avg_run_time_us - avg_run_time_op_us) / avg_run_time_op_us * 100;
+    cout<<"Average Run time op, Average Run time, overhead : "<<avg_run_time_op_us<<" us, "<<avg_run_time_us<<" us, "<<overhead<<" %\n";
     FILE *err_cnt=fopen("error_count.dat", "w");
     FILE *result=fopen("result.dat", "w");
     //save result of ABFT check (used in validation program)

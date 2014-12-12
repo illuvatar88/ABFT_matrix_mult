@@ -1,0 +1,10 @@
+void SimPLiFI_register_sighandlers();
+void SimPLiFI_sighandler_SIGSEGV(int signum);
+void SimPLiFI_sighandler_SIGILL(int signum);
+void SimPLiFI_sighandler_SIGBUS(int signum);
+void SimPLiFI_sighandler_SIGFPE(int signum);
+void SimPLiFI_sighandler_SIGABRT(int signum);
+void SimPLiFI_sighandler_SIGIOT(int signum);
+void SimPLiFI_sighandler_SIGTRAP(int signum);
+void SimPLiFI_sighandler_SIGSYS(int signum);
+// void SimPLiFI_sighandler_SIGEMT(int signum);
