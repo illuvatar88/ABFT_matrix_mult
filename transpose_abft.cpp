@@ -14,8 +14,8 @@
 
 //Begin SimPLiFI Header
 //errorDetection=error_count.dat
-//start=matrix_vector_mult
-//end=matrix_vector_mult
+//start=matrix_transpose
+//end=matrix_transpose
 //output=result.dat
 //End SimPLiFI Header
 
@@ -31,8 +31,8 @@
 #include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 3500     //row size
-#define SIZE_C 1000     //column size
+#define SIZE_R 350     //row size
+#define SIZE_C 100     //column size
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
 
