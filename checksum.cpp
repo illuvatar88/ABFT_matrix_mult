@@ -251,6 +251,8 @@ int check_matrix_checksum (int A[], int size_r, int size_c, int num_threads, int
     int error_pos_c = -1;
     int error_pos_r = -1;
     for (j = 0 ; j < size_c ; j++) {
+//        cout << "Column sum : " << sum_c[j] << endl;
+//        cout << "Column checksum : " << A[(size_r - 1) * size_c + j] << endl;
         if (sum_c[j] != A[(size_r - 1) * size_c + j]) {
             error_pos_c = j;
             //cout << "Error in column "<<j<<" : "<<sum_c[j]<<" vs "<<A[(size_r - 1) * size_c + j]<<endl;
@@ -258,6 +260,8 @@ int check_matrix_checksum (int A[], int size_r, int size_c, int num_threads, int
         }
     }
     for (i = 0 ; i < size_r - 1 ; i++) {
+//        cout << "Row sum : " << sum_r[i] << endl;
+//        cout << "Row checksum : " << A[size_c * i + size_c - 1] << endl;
         if (sum_r[i] != A[size_c * i + size_c - 1]) {
             error_pos_r = i;
             ++errors;

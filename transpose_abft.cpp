@@ -125,9 +125,9 @@ int main (int argc, char *argv[]) {
     //save result of ABFT check (used in validation program)
     fprintf(err_cnt, "%d\n", errors);
     //save C matrix
-    for (i = 0 ; i < SIZE_R; i++) {
-        for (j = 0 ; j < SIZE_C ; j++) {
-            fprintf(result, "%011d,    ", C[i * SIZE_C + j]);
+    for (i = 0 ; i < SIZE_C ; i++) {
+        for (j = 0 ; j < SIZE_R ; j++) {
+            fprintf(result, "%011d,    ", C[i * (SIZE_R + 1) + j]);
         }
         fprintf(result, ";\n");
     }
