@@ -24,8 +24,8 @@
 #include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 3500     //row size
-#define SIZE_C 1000     //column size
+#define SIZE_R 1024     //row size
+#define SIZE_C 1024   //column size
 #define SIZE_VECTOR SIZE_C      //vector length
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
