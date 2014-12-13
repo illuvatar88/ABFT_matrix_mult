@@ -19,6 +19,7 @@ int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, 
 int check_matrix_checksum (int A[], int size_r, int size_c, int num_threads, int &num_errors, int &corrupted);
 int calc_matrix_checksum (int A[], int size_r, int size_c, int num_threads);
 
+/*
 //calculate column checksum
 int calc_column_checksum (int A[], int size_r, int size_c, int num_threads) {
     int i, j;
@@ -51,17 +52,35 @@ int calc_column_checksum (int A[], int size_r, int size_c, int num_threads) {
     }
     return 0;
 }
+*/
+
+//calculate column checksum
+int calc_column_checksum (int A[], int size_r, int size_c, int num_threads) {
+    int i, j;
+    int *sum_c;
+    for (j = 0 ; j < size_c ; j++) {
+        A[size_r * size_c + j] = 0;
+    }
+    for (i = 0 ; i < size_r ; i++) {
+        for (j = 0; j < size_c ; j++) {
+            A[size_r * size_c + j] += A[i * size_c + j];
+        }
+    }
+    return 0;
+}
+
 
 //duplicate column for vector
 int dup_column_vector (int B[], int size, int num_threads) {
     int i;
-    #pragma omp parallel for shared(B) private(i) schedule(static, (size + 1) / num_threads)
+    //#pragma omp parallel for shared(B) private(i) schedule(static, (size + 1) / num_threads)
     for (i = 0 ; i < size ; i++) {
         B[i * 2 + 1] = B[i * 2];
     }
     return 0;
 }
 
+/*
 //check checksum and correct if possible
 int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, int &corrupted) {
     int *diff_vals_array = new int[size];
@@ -101,6 +120,46 @@ int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, 
     num_errors = errors;
     return 0;
 }
+*/
+
+//check checksum and correct if possible
+int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, int &corrupted) {
+    int *diff_vals_array = new int[size];
+    int errors = 0;
+    long int sum_data = 0;
+    long int sum_dup = 0;
+    int i;
+    for (i = 0 ; i < size ; i++) {
+        int data = C[i * 2];
+        int dup = C[i * 2 + 1];
+        sum_data += data;
+        sum_dup += dup;
+        if (data != dup) {
+            ++errors;
+            diff_vals_array[i] = 1;
+        } else {
+            diff_vals_array[i] = 0;
+        }
+    }
+    cout << "Column sum : " << sum_data << endl;
+    cout << "Column checksum : " << C[size * 2] << endl;
+    corrupted = 0;
+    if (C[size * 2] != sum_data) {
+        ++errors;
+        if (C[size * 2 + 1] == sum_dup) {
+            for (i = 0 ; i < size ; i++) {
+                if (diff_vals_array[i] == 1) {
+                    C[i * 2] = C[i * 2 + 1];
+                }
+            }
+        } else {
+            corrupted = 1;
+        }
+    }
+    num_errors = errors;
+    return 0;
+}
+
 
 //calculate column checksum
 int calc_matrix_checksum (int A[], int size_r, int size_c, int num_threads) {
