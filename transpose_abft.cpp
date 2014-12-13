@@ -1,3 +1,6 @@
+
+
+
 /*
  * transpose_abft.cpp
  *
@@ -31,8 +34,8 @@
 #include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 350     //row size
-#define SIZE_C 100     //column size
+#define SIZE_R 256     //row size
+#define SIZE_C 256    //column size
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
 

@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#define ERROR_RATIO 0.005 //used by inject_random_error for fraction of cells to corrupt
+#define ERROR_RATIO 0.05 //used by inject_random_error for fraction of cells to corrupt
 
 int calc_column_checksum (int A[], int size_r, int size_c, int num_threads);
 int dup_column_vector (int B[], int size, int num_threads);
@@ -194,7 +194,7 @@ int check_matrix_checksum (int A[], int size_r, int size_c, int num_threads, int
     for (j = 0 ; j < size_c ; j++) {
         if (sum_c[j] != A[(size_r - 1) * size_c + j]) {
             error_pos_c = j;
-            //cout << "Error in column "<<j<<" : "<<sum_combined_c[j]<<" vs "<<A[(size_r - 1) * size_c + j]<<endl;
+            //cout << "Error in column "<<j<<" : "<<sum_c[j]<<" vs "<<A[(size_r - 1) * size_c + j]<<endl;
             ++errors;
         }
     }
