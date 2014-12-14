@@ -1,17 +1,7 @@
-
-
-
 /*
  * transpose_abft.cpp
  *
  *  Created on: 10-Dec-2014
- *      Author: sony
- */
-
-/*
- * Matrix_vector_mult_abft.cpp
- *
- *  Created on: 26-Oct-2014
  *      Author: sony
  */
 
@@ -34,8 +24,8 @@
 #include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 256     //row size
-#define SIZE_C 256   //column size
+#define SIZE_R 10     //row size
+#define SIZE_C 10   //column size
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
 
@@ -68,6 +58,7 @@ int main (int argc, char *argv[]) {
         cout<<thread_string;
     }
 #endif
+/*
     //Assign input matrix
     //#pragma omp parallel for shared(A) private(i, j) schedule(static)
     for (i = 0 ; i < SIZE_R ; i++) {
@@ -76,6 +67,15 @@ int main (int argc, char *argv[]) {
 //            A[i * (SIZE_C + 1) + j] = 1;
         }
     }
+*/
+    ifstream fin_mat ("input_matrix");
+    for (i = 0 ; i < SIZE_R ; i++) {
+        for (j = 0 ; j < SIZE_C ; j++) {
+            fin_mat >> A[i * (SIZE_C + 1) + j];
+        }
+    }
+
+
     double init_time = timerval();    //start timing
     int errors, corrupted;
     //checksum for matrix A
@@ -100,7 +100,7 @@ int main (int argc, char *argv[]) {
         cout << "Matrix Corrupted with minimum errors : "<<errors<<endl;
     }
     //Block to print input and output
-#if 0
+#if 1
     cout<<"Input matrix A :\n";
     for (i = 0 ; i <= SIZE_R ; i++) {
         for (j = 0 ; j <= SIZE_C ; j++) {

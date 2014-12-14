@@ -7,6 +7,8 @@ tran_src = transpose_abft.cpp
 flags = -static -g -O2 -fopenmp
 defines = -D SIMPLIFI
 sig_file = SimPLiFI_sighandlers.c
+input_src = write_inputs.cpp
+input_exec = wr_ip
 
 mvm:
 	$(cc) $(flags) $(mvm_src) -o $(executable)
@@ -25,3 +27,9 @@ power_mvm:
 
 power_tran:
 	$(pcc) $(flags) $(sig_file) $(tran_src) -o $(executable) $(defines)
+	
+input:
+	$(cc) $(input_src) -o $(input_exec)
+
+run_input:
+	./$(input_exec)

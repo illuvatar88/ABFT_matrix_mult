@@ -24,8 +24,8 @@
 #include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 2048     //row size
-#define SIZE_C 2048   //column size
+#define SIZE_R 10    //row size
+#define SIZE_C 10   //column size
 #define SIZE_VECTOR SIZE_C      //vector length
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
@@ -60,17 +60,25 @@ int main (int argc, char *argv[]) {
 #endif
     //Assign input matrix
     //#pragma omp parallel for shared(A) private(i, j) schedule(static)
+/*
     for (i = 0 ; i < SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
             //A[i * SIZE_C + j] = int(rand()) % 10;
 	    A[i * SIZE_C + j] = 1;	
         }
     }
+*/
+    //Assign input matrix
+    ifstream fin_mat ("input_matrix");
+    for (i = 0 ; i < SIZE_R ; i++) {
+        for (j = 0 ; j < SIZE_C ; j++) {
+            fin_mat >> A[i * SIZE_C + j];
+        }
+    }
+    ifstream fin_vec ("input_matrix");
     //Assign input vector
-    //#pragma omp parallel for shared(B) private(i) schedule(static)
     for (i = 0 ; i < SIZE_C ; i++) {
-        //B[i * 2] = int(rand()) % 10;
-	B[i * 2] = 1;
+        fin_vec >> B[i * 2];
     }
     double init_time = timerval();    //start timing
     int errors, corrupted;
@@ -104,7 +112,7 @@ int main (int argc, char *argv[]) {
         }
     }
     //Block to print input and output
-#if 0
+#if 1
     cout<<"Input matrix A :\n";
     for (i = 0 ; i <= SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
