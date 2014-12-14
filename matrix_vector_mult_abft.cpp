@@ -24,8 +24,8 @@
 #include "checksum.cpp"
 using namespace std;
 
-#define SIZE_R 1024     //row size
-#define SIZE_C 1024   //column size
+#define SIZE_R 2048     //row size
+#define SIZE_C 2048   //column size
 #define SIZE_VECTOR SIZE_C      //vector length
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
@@ -62,13 +62,15 @@ int main (int argc, char *argv[]) {
     //#pragma omp parallel for shared(A) private(i, j) schedule(static)
     for (i = 0 ; i < SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
-            A[i * SIZE_C + j] = int(rand()) % 10;
+            //A[i * SIZE_C + j] = int(rand()) % 10;
+	    A[i * SIZE_C + j] = 1;	
         }
     }
     //Assign input vector
     //#pragma omp parallel for shared(B) private(i) schedule(static)
     for (i = 0 ; i < SIZE_C ; i++) {
-        B[i * 2] = int(rand()) % 10;
+        //B[i * 2] = int(rand()) % 10;
+	B[i * 2] = 1;
     }
     double init_time = timerval();    //start timing
     int errors, corrupted;

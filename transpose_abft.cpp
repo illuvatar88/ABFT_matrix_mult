@@ -35,7 +35,7 @@
 using namespace std;
 
 #define SIZE_R 256     //row size
-#define SIZE_C 256    //column size
+#define SIZE_C 256   //column size
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
 
@@ -72,8 +72,8 @@ int main (int argc, char *argv[]) {
     //#pragma omp parallel for shared(A) private(i, j) schedule(static)
     for (i = 0 ; i < SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
-//            A[i * (SIZE_C + 1) + j] = int(rand()) % 10;
-            A[i * (SIZE_C + 1) + j] = 1;
+            A[i * (SIZE_C + 1) + j] = int(rand()) % 10;
+//            A[i * (SIZE_C + 1) + j] = 1;
         }
     }
     double init_time = timerval();    //start timing
@@ -86,7 +86,7 @@ int main (int argc, char *argv[]) {
     //run multiplication
     matrix_transpose(A, C, num_threads);
     double end_time_op = timerval();
-#if 1   //set to 1 to use random error injection function in checksum.cpp
+#if 0   //set to 1 to use random error injection function in checksum.cpp
         inject_random_error(C, SIZE_C + 1, SIZE_R + 1);
 #endif
     //check and try to recover otherwise set corrupted as 1
@@ -100,7 +100,7 @@ int main (int argc, char *argv[]) {
         cout << "Matrix Corrupted with minimum errors : "<<errors<<endl;
     }
     //Block to print input and output
-#if 1
+#if 0
     cout<<"Input matrix A :\n";
     for (i = 0 ; i <= SIZE_R ; i++) {
         for (j = 0 ; j <= SIZE_C ; j++) {
