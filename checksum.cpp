@@ -226,7 +226,7 @@ int check_matrix_checksum (int A[], int size_r, int size_c, int num_threads, int
         for (j = 0 ; j < size_c ; j++) {
             sum_c[j] = 0;
         }
-        #pragma omp for schedule(static, (size_r + 1) / num_threads)
+//        #pragma omp for schedule(static, (size_r + 1) / num_threads)
         for (i = 0 ; i < size_r ; i++) {
             sum_r[i] = 0;
         }

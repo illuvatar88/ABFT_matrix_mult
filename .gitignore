@@ -8,3 +8,5 @@ launch.out
 result.dat
 error_count.dat
 launch
+wr_ip
+input_matrix

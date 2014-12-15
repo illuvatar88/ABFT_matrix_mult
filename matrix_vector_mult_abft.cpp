@@ -22,10 +22,11 @@
 #include <cstring>
 #include "timer.cpp"
 #include "checksum.cpp"
+#include <fstream>
 using namespace std;
 
-#define SIZE_R 10    //row size
-#define SIZE_C 10   //column size
+#define SIZE_R 1024    //row size
+#define SIZE_C 1024   //column size
 #define SIZE_VECTOR SIZE_C      //vector length
 #define ITER 1      //number of iterations
 #define THREAD_LIMIT 2      //max number of threads to use
@@ -60,26 +61,35 @@ int main (int argc, char *argv[]) {
 #endif
     //Assign input matrix
     //#pragma omp parallel for shared(A) private(i, j) schedule(static)
-/*
+
     for (i = 0 ; i < SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
             //A[i * SIZE_C + j] = int(rand()) % 10;
 	    A[i * SIZE_C + j] = 1;	
         }
     }
-*/
-    //Assign input matrix
+
+/*    //Assign input matrix
     ifstream fin_mat ("input_matrix");
     for (i = 0 ; i < SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
             fin_mat >> A[i * SIZE_C + j];
         }
-    }
-    ifstream fin_vec ("input_matrix");
-    //Assign input vector
+    } */
     for (i = 0 ; i < SIZE_C ; i++) {
-        fin_vec >> B[i * 2];
+        B[i * 2] = 1;
     }
+
+/*    ifstream fin_vec ("input_matrix");
+    if (fin_vec.is_open()) {
+	//Assign input vector
+        for (i = 0 ; i < SIZE_C ; i++) {
+            fin_vec >> B[i * 2];
+        }
+    } else {
+    cerr << "Input file cannot be opened\n";
+    return 1;
+    } */
     double init_time = timerval();    //start timing
     int errors, corrupted;
     //checksum for matrix A
@@ -112,7 +122,7 @@ int main (int argc, char *argv[]) {
         }
     }
     //Block to print input and output
-#if 1
+#if 0
     cout<<"Input matrix A :\n";
     for (i = 0 ; i <= SIZE_R ; i++) {
         for (j = 0 ; j < SIZE_C ; j++) {
