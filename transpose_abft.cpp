@@ -23,6 +23,7 @@
 #include "timer.cpp"
 #include "checksum.cpp"
 #include <fstream>
+
 using namespace std;
 
 #define SIZE_R 1024     //row size
@@ -81,18 +82,18 @@ int main (int argc, char *argv[]) {
     double init_time = timerval();    //start timing
     int errors, corrupted;
     //checksum for matrix A
-    if (calc_matrix_checksum(A, SIZE_R, SIZE_C, num_threads) != 0) {
+    if (calc_matrix_checksum(A, SIZE_R, SIZE_C) != 0) {
         return 1;
     }
     double init_time_op = timerval();
-    //run multiplication
+    //run transpose
     matrix_transpose(A, C, num_threads);
     double end_time_op = timerval();
 #if 0   //set to 1 to use random error injection function in checksum.cpp
         inject_random_error(C, SIZE_C + 1, SIZE_R + 1);
 #endif
     //check and try to recover otherwise set corrupted as 1
-    if (check_matrix_checksum(C, SIZE_C + 1, SIZE_R + 1, num_threads, errors, corrupted) != 0) {
+    if (check_matrix_checksum(C, SIZE_C + 1, SIZE_R + 1, errors, corrupted) != 0) {
         return 1;
     }
     double end_time = timerval();    //end timing

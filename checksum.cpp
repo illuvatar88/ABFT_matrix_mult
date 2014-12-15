@@ -16,8 +16,8 @@ int calc_column_checksum (int A[], int size_r, int size_c, int num_threads);
 int dup_column_vector (int B[], int size, int num_threads);
 void inject_random_error (int C[], int size_r, int size_c);
 int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, int &corrupted);
-int check_matrix_checksum (int A[], int size_r, int size_c, int num_threads, int &num_errors, int &corrupted);
-int calc_matrix_checksum (int A[], int size_r, int size_c, int num_threads);
+int check_matrix_checksum (int A[], int size_r, int size_c, int &num_errors, int &corrupted);
+int calc_matrix_checksum (int A[], int size_r, int size_c);
 
 /*
 //calculate column checksum
@@ -161,111 +161,60 @@ int check_vector_checksum (int C[], int size, int num_threads, int &num_errors, 
 }
 
 
-//calculate column checksum
-int calc_matrix_checksum (int A[], int size_r, int size_c, int num_threads) {
+//calculate matrix checksum...size_r and size_c are row and column sizes excluding the checksum
+int calc_matrix_checksum (int A[], int size_r, int size_c) {
     int i, j;
-  //  int *sum_c;
-  //  #pragma omp parallel shared(A) private(i, j, sum_c)
-  //  {
-  //      #pragma omp master
-        {
-            for (j = 0 ; j < size_c + 1 ; j++) {
-                A[size_r * (size_c + 1) + j] = 0;
-            }
+    //initialize column checksums
+    for (j = 0 ; j < size_c + 1 ; j++) {
+        A[size_r * (size_c + 1) + j] = 0;
+    }
+    //initialize Row checksums
+    for (i = 0 ; i < size_r ; i++) {
+        A[size_c + (size_c + 1) * i] = 0;
+    }
+    for (i = 0 ; i < size_r ; i++) {
+        for (j = 0; j < size_c ; j++) {
+            A[size_c + (size_c + 1) * i] += A[i * (size_c + 1) + j];
+            A[size_r * (size_c + 1) + j] += A[i * (size_c + 1) + j];
         }
-  //      #pragma omp for schedule(static, (size_r + 1) / num_threads)
-        for (i = 0 ; i < size_r ; i++) {
-            A[size_c + (size_c + 1) * i] = 0;
-        }
- /*       sum_c = new int[size_c + 1];
-        for (j = 0 ; j < size_c + 1 ; j++) {
-            sum_c[j] = 0;
-        }
- */       //#pragma omp for schedule(static, (size_r + 1) / num_threads)
-        for (i = 0 ; i < size_r ; i++) {
-            for (j = 0; j < size_c ; j++) {
-                A[size_c + (size_c + 1) * i] += A[i * (size_c + 1) + j];
-                A[size_r * (size_c + 1) + j] += A[i * (size_c + 1) + j];
-
-                //             sum_c[j] += A[i * (size_c + 1) + j];
-            }
             A[(size_r + 1) * (size_c + 1) -1] += A[size_c + (size_c + 1) * i];
- //           sum_c[size_c] += A[size_c + (size_c + 1) * i];
-        }
-/*
-        #pragma omp critical
-        {
-            for (j = 0 ; j < size_c + 1 ; j++) {
-                A[size_r * (size_c + 1) + j] += sum_c[j];
-            }
-        }
-*/
- //       delete[] sum_c;
- //   }
+    }
     return 0;
 }
 
 
-//check checksum and correct if possible
-int check_matrix_checksum (int A[], int size_r, int size_c, int num_threads, int &num_errors, int &corrupted) {
+//check checksum and correct if possible....size_r and size_c are total matrix dimensions
+int check_matrix_checksum (int A[], int size_r, int size_c, int &num_errors, int &corrupted) {
     int errors = 0;
     int *sum_c;
-    int *sum_combined_c = new int[size_c];
     int *sum_r = new int[size_r];
     int i, j;
-/*
+    sum_c = new int[size_c];
     for (j = 0 ; j < size_c ; j++) {
-        sum_combined_c[j] = 0;
+        sum_c[j] = 0;
     }
-*/
-/*
-    #pragma omp parallel shared(A, sum_r, sum_combined_c) private(i, j, sum_c)
-    {
-*/
-        sum_c = new int[size_c];
-        for (j = 0 ; j < size_c ; j++) {
-            sum_c[j] = 0;
+    for (i = 0 ; i < size_r ; i++) {
+        sum_r[i] = 0;
+    }
+    for (i = 0 ; i < size_r - 1 ; i++) {
+        for (j = 0; j < size_c - 1 ; j++) {
+            sum_r[i] += A[i * size_c + j];
+            sum_c[j] += A[i * size_c + j];
         }
-//        #pragma omp for schedule(static, (size_r + 1) / num_threads)
-        for (i = 0 ; i < size_r ; i++) {
-            sum_r[i] = 0;
-        }
-//        #pragma omp for schedule(static, (size_r + 1) / num_threads)
-        for (i = 0 ; i < size_r - 1 ; i++) {
-            for (j = 0; j < size_c - 1 ; j++) {
-                sum_r[i] += A[i * size_c + j];
-                sum_c[j] += A[i * size_c + j];
-            }
-            sum_c[size_c - 1] += A[size_c - 1 + size_c * i];
-        }
-/*
-        #pragma omp critical
-        {
-            for (j = 0 ; j < size_c ; j++) {
-                sum_combined_c[j] += sum_c[j];
-            }
-        }
-*/
-//        delete[] sum_c;
-//    }
+        sum_c[size_c - 1] += A[size_c - 1 + size_c * i];
+    }
     int error_pos_c = -1;
     int error_pos_r = -1;
     for (j = 0 ; j < size_c ; j++) {
-//        cout << "Column sum : " << sum_c[j] << endl;
-//        cout << "Column checksum : " << A[(size_r - 1) * size_c + j] << endl;
         if (sum_c[j] != A[(size_r - 1) * size_c + j]) {
             error_pos_c = j;
-            //cout << "Error in column "<<j<<" : "<<sum_c[j]<<" vs "<<A[(size_r - 1) * size_c + j]<<endl;
             ++errors;
         }
     }
     for (i = 0 ; i < size_r - 1 ; i++) {
-//        cout << "Row sum : " << sum_r[i] << endl;
-//        cout << "Row checksum : " << A[size_c * i + size_c - 1] << endl;
         if (sum_r[i] != A[size_c * i + size_c - 1]) {
             error_pos_r = i;
             ++errors;
-            //cout << "Error in row: "<<i<<endl;
         }
     }
     num_errors = errors;
